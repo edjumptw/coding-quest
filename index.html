@@ -1,0 +1,584 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>程式探險隊</title>
+<style>
+:root{
+  --grass:#7CB342; --grass2:#8BC34A; --stone:#9E9E9E; --water:#4FC3F7;
+  --bg:#F3F7EC; --card:#FFFFFF; --ink:#37474F; --ink2:#78909C;
+  --b-forward:#42A5F5; --b-right:#FFA726; --b-left:#AB47BC;
+  --b-collect:#FFCA28; --b-repeat:#66BB6A; --gold:#FFB300;
+}
+*{box-sizing:border-box; -webkit-tap-highlight-color:transparent; touch-action:manipulation;}
+body{
+  margin:0; padding:12px; background:var(--bg); color:var(--ink);
+  font-family:"PingFang TC","Hiragino Sans GB","Microsoft JhengHei",system-ui,sans-serif;
+  font-size:16px; line-height:1.5;
+}
+.wrap{max-width:960px; margin:0 auto;}
+h1{font-size:22px; margin:0 0 4px; font-weight:500;}
+.sub{font-size:13px; color:var(--ink2); margin-bottom:10px;}
+
+.bar{
+  display:flex; align-items:center; gap:8px; flex-wrap:wrap;
+  background:var(--card); border-radius:12px; padding:10px 12px; margin-bottom:10px;
+}
+.lvname{font-size:17px; font-weight:500; flex:1 1 160px;}
+.stars{font-size:18px; letter-spacing:2px;}
+.mute{margin-left:auto;}
+
+button{
+  font-family:inherit; font-size:15px; border:none; border-radius:10px;
+  padding:10px 14px; background:#ECEFF1; color:var(--ink); cursor:pointer;
+  min-height:44px;
+}
+button:active{transform:translateY(1px);}
+.btn-main{background:#2E7D32; color:#fff; font-size:17px; font-weight:500; padding:12px 22px;}
+.btn-gray{background:#ECEFF1;}
+.btn-gold{background:var(--gold); color:#fff;}
+
+.layout{display:flex; gap:12px; flex-wrap:wrap; align-items:flex-start;}
+.panel{background:var(--card); border-radius:14px; padding:12px;}
+
+.mapbox{position:relative; width:min(88vw,420px); aspect-ratio:1/1; border-radius:12px; overflow:hidden; border:3px solid #A5D16A;}
+.grid{display:grid; grid-template-columns:repeat(8,1fr); grid-template-rows:repeat(8,1fr); width:100%; height:100%;}
+.cell{display:flex; align-items:center; justify-content:center; font-size:min(6vw,30px); background:var(--grass); border:1px solid rgba(0,0,0,.07);}
+.cell.alt{background:var(--grass2);}
+.cell.stone{background:#BDBDBD;}
+.cell.water{background:var(--water);}
+.cell.goal{background:#FFF3C4;}
+#cat{
+  position:absolute; width:12.5%; height:12.5%; display:flex; flex-direction:column;
+  align-items:center; justify-content:center; transition:left .3s ease, top .3s ease; z-index:5;
+}
+.catface{font-size:min(6.5vw,34px); line-height:1;}
+.catdir{font-size:min(3.4vw,17px); color:#E65100; transition:transform .2s ease; margin-top:-2px;}
+.shake{animation:shake .4s;}
+@keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-6px)}75%{transform:translateX(6px)}}
+.pop{animation:pop .35s;}
+@keyframes pop{0%{transform:scale(1)}50%{transform:scale(1.35)}100%{transform:scale(1)}}
+
+.rightcol{flex:1 1 340px; min-width:300px;}
+.blkrow{display:flex; gap:8px; flex-wrap:wrap; margin-bottom:10px;}
+.blk{
+  color:#fff; font-weight:500; font-size:16px; border-radius:10px; padding:12px 14px;
+  min-height:48px; display:flex; align-items:center; gap:6px;
+}
+.blk.forward{background:var(--b-forward);}
+.blk.right{background:var(--b-right);}
+.blk.left{background:var(--b-left);}
+.blk.collect{background:var(--b-collect); color:#5D4037;}
+.blk.repeat{background:var(--b-repeat);}
+.blk:disabled{background:#E0E0E0; color:#BDBDBD;}
+
+#program{
+  min-height:96px; background:#FAFAFA; border:2px dashed #CFD8DC; border-radius:12px;
+  padding:10px; display:flex; gap:8px; flex-wrap:wrap; align-content:flex-start;
+}
+.item{
+  position:relative; color:#fff; border-radius:10px; padding:10px 26px 10px 12px;
+  font-size:15px; display:flex; align-items:center; min-height:44px;
+}
+.item.forward{background:var(--b-forward);}
+.item.right{background:var(--b-right);}
+.item.left{background:var(--b-left);}
+.item.collect{background:var(--b-collect); color:#5D4037;}
+.item .x{
+  position:absolute; top:2px; right:3px; font-size:12px; opacity:.75;
+  padding:2px 5px; border-radius:6px; background:rgba(0,0,0,.15); cursor:pointer;
+}
+.repbox{
+  background:#E8F5E9; border:2px solid var(--b-repeat); border-radius:12px; padding:8px;
+  display:flex; flex-direction:column; gap:6px; min-width:130px;
+}
+.repbox.active{border-color:#1B5E20; background:#DCEDC8; box-shadow:0 0 0 3px rgba(102,187,106,.35);}
+.rephead{display:flex; align-items:center; gap:6px; font-size:14px; color:#2E7D32; font-weight:500;}
+.rephead .n{background:var(--b-repeat); color:#fff; border-radius:6px; padding:2px 9px; cursor:pointer;}
+.rephead .x{margin-left:auto; font-size:12px; padding:2px 6px; background:rgba(0,0,0,.1); border-radius:6px; cursor:pointer;}
+.repbody{display:flex; gap:6px; flex-wrap:wrap; min-height:40px; align-items:center;}
+.repbody .item{font-size:13px; padding:8px 22px 8px 10px; min-height:36px;}
+.empty{color:#B0BEC5; font-size:14px; padding:8px;}
+.insertnote{font-size:13px; color:#2E7D32; margin-top:8px; font-weight:500;}
+
+.ctrls{display:flex; gap:8px; flex-wrap:wrap; margin-top:10px; align-items:center;}
+#msg{
+  margin-top:10px; padding:12px; border-radius:12px; font-size:15px;
+  background:#FFF8E1; color:#6D4C41; min-height:44px;
+}
+#msg.good{background:#E8F5E9; color:#2E7D32;}
+#msg.bad{background:#FFEBEE; color:#C62828;}
+.lvrow{display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin-bottom:10px;}
+.lvbar{display:flex; gap:6px; flex-wrap:wrap;}
+.wipe{margin-left:auto; font-size:13px; min-height:36px; padding:6px 10px; background:#ECEFF1; color:#90A4AE;}
+.lvbtn{width:46px; height:46px; border-radius:10px; background:#ECEFF1; font-size:15px; padding:0;}
+.lvbtn.cur{background:#2E7D32; color:#fff;}
+.lvbtn.done{background:#C8E6C9;}
+.editbox{display:none; margin-top:10px; font-size:14px; color:var(--ink2);}
+.editbox.on{display:block;}
+.cell.editable{cursor:pointer;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>程式探險隊</h1>
+  <div class="sub">排指令，按執行，看小貓照你的意思走。<span id="tipsub"></span></div>
+
+  <div class="bar">
+    <div class="lvname" id="lvname">第一關</div>
+    <div class="stars" id="stars"></div>
+    <button class="mute btn-gray" id="mutebtn">🔊 音效</button>
+  </div>
+
+  <div class="lvrow">
+    <div class="lvbar" id="lvbar"></div>
+    <button class="wipe" id="wipebtn">清除全部進度</button>
+  </div>
+
+  <div class="layout">
+    <div class="panel">
+      <div class="mapbox"><div class="grid" id="grid"></div><div id="cat"><div class="catface">🐱</div><div class="catdir" id="catdir">▲</div></div></div>
+      <div class="editbox" id="editbox">編輯模式：點格子可以換成 草地 → 石頭 → 寶石 → 寶藏 → 水 → 樹。小貓的起點固定在左上角。</div>
+    </div>
+
+    <div class="rightcol">
+      <div class="panel">
+        <div class="blkrow" id="blkrow"></div>
+        <div id="program"></div>
+        <div id="insertnote"></div>
+      </div>
+
+      <div class="ctrls">
+        <button class="btn-main" id="runbtn">▶ 執行</button>
+        <button class="btn-gray" id="resetbtn">↺ 重新開始</button>
+        <button class="btn-gray" id="clearbtn">清除指令</button>
+        <button class="btn-gray" id="hintbtn">💡 提示</button>
+        <button class="btn-gold" id="nextbtn" style="display:none">下一關 →</button>
+      </div>
+
+      <div id="msg">按上面的積木，把指令排進來吧。</div>
+    </div>
+  </div>
+</div>
+
+<script>
+const LEVELS=[
+{name:'第 1 關：走三步',par:3,blocks:['forward'],
+ hint:'按「前進」三次，小貓就會走到星星那裡！',
+ map:['........','.T....T.','........','........','S..X....','........','.T....T.','........'],
+ start:{x:0,y:4,dir:1}},
+
+{name:'第 2 關：轉個彎',par:8,blocks:['forward','right'],
+ hint:'星星不在正前方了。走到轉角再按「右轉」。',
+ map:['........','........','.S......','..##....','........','.....X..','........','........'],
+ start:{x:1,y:2,dir:1}},
+
+{name:'第 3 關：繞過石頭',par:8,blocks:['forward','left','right'],
+ hint:'石頭擋住了！往前一格，轉彎繞過去，再轉回來。',
+ map:['........','........','..#.....','S..###..','.....X..','........','........','........'],
+ start:{x:0,y:3,dir:1}},
+
+{name:'第 4 關：偷懶的方法',par:4,blocks:['forward','repeat'],
+ hint:'要走 6 步耶…按 6 次前進好累。試試看「重複」，把前進放進重複裡面！',
+ map:['....T...','........','S.....X.','........','..T...T.','........','........','........'],
+ start:{x:0,y:2,dir:1}},
+
+{name:'第 5 關：轉兩次彎',par:5,blocks:['forward','right','repeat'],
+ hint:'把「前進、前進、前進、右轉」放進重複 2 次裡面，一次搞定！',
+ map:['S.......','........','........','...X....','........','........','.T....T.','........'],
+ start:{x:0,y:0,dir:1}},
+
+{name:'第 6 關：撿寶石',par:7,blocks:['forward','collect','repeat'],
+ hint:'走到寶石上面要記得按「收集」，不然不算數喔。',
+ map:['........','........','........','........','S.G.G.X.','........','.T....T.','........'],
+ start:{x:0,y:4,dir:1}},
+
+{name:'第 7 關：長征',par:10,blocks:['forward','left','right','collect','repeat'],
+ hint:'路很長。哪些地方可以用「重複」代替一直按前進？',
+ map:['S..#....','....#...','T...#...','..G..X..','...##...','........','.T....T.','........'],
+ start:{x:0,y:0,dir:1}},
+
+{name:'第 8 關：挑戰關',par:11,blocks:['forward','left','right','collect','repeat'],
+ hint:'最後一關！先想好整條路，再決定哪幾段要用「重複」。',
+ map:['S..G....','........','........','...G..X.','........','........','.T....T.','........'],
+ start:{x:0,y:0,dir:1}}
+];
+
+const DIRS=[[0,-1],[1,0],[0,1],[-1,0]];
+const DIRNAME=['上','右','下','左'];
+const DIRROT=[0,90,180,270];
+
+let lv=0, program=[], target=null, running=false, runToken=0;
+let cat={x:0,y:0,dir:1}, gems=[], collected=[], mapData=[], free=false;
+let stars={};
+try{stars=JSON.parse(localStorage.getItem('cq_stars')||'{}');}catch(e){stars={};}
+
+let audioCtx=null, muted=false;
+function beep(freq,dur,type){
+  if(muted) return;
+  try{
+    if(!audioCtx) audioCtx=new (window.AudioContext||window.webkitAudioContext)();
+    const o=audioCtx.createOscillator(), g=audioCtx.createGain();
+    o.type=type||'sine'; o.frequency.value=freq;
+    g.gain.setValueAtTime(.12,audioCtx.currentTime);
+    g.gain.exponentialRampToValueAtTime(.001,audioCtx.currentTime+dur);
+    o.connect(g); g.connect(audioCtx.destination);
+    o.start(); o.stop(audioCtx.currentTime+dur);
+  }catch(e){}
+}
+function sfxMove(){beep(520,.09);}
+function sfxTurn(){beep(340,.08,'triangle');}
+function sfxGet(){beep(660,.1);setTimeout(()=>beep(880,.12),90);}
+function sfxWin(){[523,659,784,1047].forEach((f,i)=>setTimeout(()=>beep(f,.18),i*130));}
+function sfxFail(){beep(220,.16,'sawtooth');setTimeout(()=>beep(150,.22,'sawtooth'),150);}
+
+const $=id=>document.getElementById(id);
+
+function loadLevel(i){
+  runToken++;
+  lv=i; free=false; program=[]; target=null; running=false;
+  $('runbtn') && ($('runbtn').disabled=false);
+  $('cat') && $('cat').classList.remove('shake');
+  const L=LEVELS[i];
+  mapData=L.map.map(r=>r.split(''));
+  cat={x:L.start.x,y:L.start.y,dir:L.start.dir};
+  gems=[]; collected=[];
+  for(let y=0;y<8;y++) for(let x=0;x<8;x++) if(mapData[y][x]==='G') gems.push(x+','+y);
+  $('editbox').classList.remove('on');
+  drawMap(); drawCat(); renderBlocks(); renderProgram(); renderLvBar();
+  $('lvname').textContent=L.name;
+  showStars(stars[i]||0);
+  $('nextbtn').style.display='none';
+  msg('按上面的積木，把指令排進來吧。','');
+  $('tipsub').textContent='';
+}
+
+function freeMode(){
+  runToken++;
+  free=true; program=[]; target=null; running=false;
+  $('runbtn').disabled=false;
+  $('cat').classList.remove('shake');
+  mapData=Array.from({length:8},()=>Array(8).fill('.'));
+  mapData[0][0]='S'; mapData[7][7]='X';
+  cat={x:0,y:0,dir:1}; gems=[]; collected=[];
+  drawMap(); drawCat(); renderBlocks(); renderProgram(); renderLvBar();
+  $('lvname').textContent='自由模式：自己出題';
+  showStars(0);
+  $('nextbtn').style.display='none';
+  $('editbox').classList.add('on');
+  msg('點格子改地圖，排好指令按執行。','');
+  $('tipsub').textContent='';
+}
+
+function drawMap(){
+  const g=$('grid'); g.innerHTML='';
+  for(let y=0;y<8;y++){
+    for(let x=0;x<8;x++){
+      const c=mapData[y][x];
+      const d=document.createElement('div');
+      let cls='cell', t='';
+      if((x+y)%2===0) cls+=' alt';
+      if(c==='#'){cls+=' stone'; t='🪨';}
+      else if(c==='T'){t='🌳';}
+      else if(c==='~'){cls+=' water'; t='🌊';}
+      else if(c==='G'){t=collected.includes(x+','+y)?'':'💎';}
+      else if(c==='X'){cls+=' goal'; t='⭐';}
+      else if(c==='S'){t='';}
+      if(free) cls+=' editable';
+      d.className=cls; d.textContent=t;
+      d.dataset.x=x; d.dataset.y=y;
+      if(free) d.onclick=()=>editCell(x,y);
+      g.appendChild(d);
+    }
+  }
+}
+
+function editCell(x,y){
+  const order=['.','#','G','X','~','T'];
+  const cur=mapData[y][x];
+  let n=order.indexOf(cur);
+  if(n<0) n=0;
+  mapData[y][x]=order[(n+1)%order.length];
+  if(mapData[y][x]==='S') mapData[y][x]='.';
+  gems=[];
+  for(let yy=0;yy<8;yy++) for(let xx=0;xx<8;xx++) if(mapData[yy][xx]==='G') gems.push(xx+','+yy);
+  collected=[];
+  drawMap();
+}
+
+function drawCat(){
+  const c=$('cat');
+  c.style.left=(cat.x*12.5)+'%';
+  c.style.top=(cat.y*12.5)+'%';
+  $('catdir').style.transform='rotate('+DIRROT[cat.dir]+'deg)';
+}
+
+function renderBlocks(){
+  const defs=[
+    ['forward','⬆️ 前進'],['right','↪️ 右轉'],['left','↩️ 左轉'],
+    ['collect','💎 收集'],['repeat','🔁 重複']
+  ];
+  const allow=free?['forward','left','right','collect','repeat']:LEVELS[lv].blocks;
+  $('blkrow').innerHTML='';
+  defs.forEach(([k,label])=>{
+    const b=document.createElement('button');
+    b.className='blk '+k; b.textContent=label;
+    b.disabled=!allow.includes(k);
+    b.onclick=()=>addBlock(k);
+    $('blkrow').appendChild(b);
+  });
+}
+
+function addBlock(k){
+  if(running) return;
+  const list=(target===null)?program:(target.body);
+  if(k==='repeat'){
+    if(target!==null){msg('重複裡面不能再放重複了。先按「結束重複」。','bad');return;}
+    const it={type:'repeat',times:3,body:[]};
+    program.push(it); target=it;
+  }else{
+    list.push({type:k});
+  }
+  renderProgram(); beep(700,.05);
+}
+
+function renderProgram(){
+  const p=$('program'); p.innerHTML='';
+  if(program.length===0){
+    const e=document.createElement('div'); e.className='empty';
+    e.textContent='程式是空的。點上面的積木加進來。';
+    p.appendChild(e);
+  }
+  program.forEach(it=>p.appendChild(renderItem(it)));
+  const note=$('insertnote');
+  if(target!==null){
+    note.className='insertnote';
+    note.innerHTML='現在加的積木會放進「重複」裡面 <button id="endrep" style="margin-left:6px;background:#1B5E20;color:#fff;font-size:13px;padding:6px 10px;min-height:36px">結束重複</button>';
+    $('endrep').onclick=()=>{target=null; renderProgram();};
+  }else{
+    note.className=''; note.innerHTML='';
+  }
+}
+
+function renderItem(it){
+  if(it.type==='repeat'){
+    const box=document.createElement('div');
+    box.className='repbox'+(target===it?' active':'');
+    const head=document.createElement('div'); head.className='rephead';
+    const n=document.createElement('span'); n.className='n'; n.textContent=it.times;
+    n.onclick=()=>{it.times=it.times>=5?2:it.times+1; renderProgram(); beep(600,.05);};
+    head.appendChild(document.createTextNode('🔁 重複'));
+    head.appendChild(n);
+    head.appendChild(document.createTextNode('次'));
+    const x=document.createElement('span'); x.className='x'; x.textContent='✕';
+    x.onclick=()=>{
+      const i=program.indexOf(it); if(i>=0) program.splice(i,1);
+      if(target===it) target=null;
+      renderProgram();
+    };
+    head.appendChild(x);
+    const body=document.createElement('div'); body.className='repbody';
+    if(it.body.length===0){
+      const e=document.createElement('div'); e.className='empty'; e.textContent='空的';
+      body.appendChild(e);
+    }
+    it.body.forEach(c=>body.appendChild(renderItem(c)));
+    box.appendChild(head); box.appendChild(body);
+    return box;
+  }
+  const names={forward:'⬆️ 前進',right:'↪️ 右轉',left:'↩️ 左轉',collect:'💎 收集'};
+  const d=document.createElement('div');
+  d.className='item '+it.type;
+  d.appendChild(document.createTextNode(names[it.type]));
+  const x=document.createElement('span'); x.className='x'; x.textContent='✕';
+    x.onclick=ev=>{
+      ev.stopPropagation();
+      if(target===it) target=null;
+      removeItem(it);
+      renderProgram();
+    };
+  d.appendChild(x);
+  return d;
+}
+
+function removeItem(it){
+  const rec=list=>{
+    const i=list.indexOf(it);
+    if(i>=0){list.splice(i,1);return true;}
+    for(const p of list) if(p.type==='repeat'&&rec(p.body)) return true;
+    return false;
+  };
+  rec(program);
+}
+
+function flatten(list,out){
+  list.forEach(it=>{
+    if(it.type==='repeat'){
+      for(let i=0;i<it.times;i++) flatten(it.body,out);
+    }else out.push(it);
+  });
+  return out;
+}
+function blockCount(list){
+  let n=0;
+  list.forEach(it=>{n+=1; if(it.type==='repeat') n+=blockCount(it.body);});
+  return n;
+}
+
+function msg(t,cls){const m=$('msg'); m.textContent=t; m.className=cls||'';}
+
+function walkable(x,y){
+  if(x<0||y<0||x>7||y>7) return false;
+  const c=mapData[y][x];
+  return c!=='#'&&c!=='T'&&c!=='~';
+}
+
+function sleep(ms){return new Promise(r=>setTimeout(r,ms));}
+
+async function run(){
+  if(running) return;
+  if(program.length===0){msg('先排幾個指令吧。','bad');return;}
+  running=true;
+  const myToken=runToken;
+  const alive=()=>runToken===myToken;
+  $('runbtn').disabled=true;
+  const L=LEVELS[lv];
+  const st=free?{x:0,y:0,dir:1}:{x:L.start.x,y:L.start.y,dir:L.start.dir};
+  cat={x:st.x,y:st.y,dir:st.dir};
+  collected=[]; drawMap(); drawCat();
+  await sleep(150);
+  if(!alive()) return;
+  const steps=flatten(program,[]);
+  let fail=null;
+  for(const s of steps){
+    if(!alive()) return;
+    if(s.type==='forward'){
+      const dx=DIRS[cat.dir][0], dy=DIRS[cat.dir][1];
+      const nx=cat.x+dx, ny=cat.y+dy;
+      if(!walkable(nx,ny)){
+        fail='撞到'+(mapData[ny]&&mapData[ny][nx]==='~'?'水':(mapData[ny]&&mapData[ny][nx]==='T'?'樹':'石頭'))+'了！往別的方向試試。';
+        if(!(nx<0||ny<0||nx>7||ny>7)){
+          $('cat').classList.add('shake');
+          setTimeout(()=>$('cat').classList.remove('shake'),450);
+        }
+        break;
+      }
+      cat.x=nx; cat.y=ny; drawCat(); sfxMove(); await sleep(330);
+    }else if(s.type==='left'||s.type==='right'){
+      cat.dir=(cat.dir+(s.type==='right'?1:3))%4;
+      drawCat(); sfxTurn(); await sleep(260);
+    }else if(s.type==='collect'){
+      const key=cat.x+','+cat.y;
+      if(mapData[cat.y][cat.x]==='G'&&!collected.includes(key)){
+        collected.push(key); drawMap(); sfxGet();
+        const el=$('grid').children[cat.y*8+cat.x];
+        if(el) el.classList.add('pop');
+        await sleep(330);
+      }else{
+        msg('這裡沒有寶石，「收集」白做了。','bad');
+        await sleep(500);
+      }
+    }
+  }
+  if(!alive()) return;
+  if(fail){ sfxFail(); msg(fail,'bad'); }
+  else{
+    const onGoal=mapData[cat.y][cat.x]==='X';
+    const allGems=gems.every(g=>collected.includes(g));
+    if(onGoal&&allGems){
+      sfxWin();
+      const used=blockCount(program);
+      if(free){ msg('成功！你自己設計的關卡被破解了。','good'); }
+      else{
+        const par=L.par;
+        let n=1;
+        if(used<=par+2) n=2;
+        if(used<=par) n=3;
+        if(n>(stars[lv]||0)){stars[lv]=n; try{localStorage.setItem('cq_stars',JSON.stringify(stars));}catch(e){}}
+        showStars(stars[lv]||0);
+        renderLvBar();
+        let say='過關！你用了 '+used+' 個積木';
+        if(n<3) say+='，目標是 '+par+' 個以內。想想哪裡還可以用「重複」？';
+        else say+='，很省！';
+        msg(say,'good');
+        $('nextbtn').style.display='';
+      }
+      $('grid').children[cat.y*8+cat.x].classList.add('pop');
+    }else if(!onGoal){
+      sfxFail();
+      msg('指令跑完了，可是小貓還沒走到星星那裡。','bad');
+    }else{
+      sfxFail();
+      msg('走到星星了，但是還有 '+(gems.length-collected.length)+' 個寶石沒撿到。','bad');
+    }
+  }
+  if(!alive()) return;
+  running=false;
+  $('runbtn').disabled=false;
+}
+
+function resetLevel(){
+  runToken++;
+  running=false;
+  $('runbtn').disabled=false;
+  $('cat').classList.remove('shake');
+  program=[]; target=null;
+  if(free){
+    cat={x:0,y:0,dir:1}; collected=[];
+    drawMap(); drawCat(); renderBlocks(); renderProgram();
+    $('lvname').textContent='自由模式：自己出題';
+    $('editbox').classList.add('on');
+    showStars(0);
+    msg('重新開始了。你自己畫的地圖留著，指令清掉了。','');
+  }else{
+    loadLevel(lv);
+    msg('回到這一關最開始的樣子。','');
+  }
+  $('nextbtn').style.display='none';
+}
+
+function wipeAll(){
+  if(!confirm('把所有關卡的星星紀錄都清掉，從第一關重新開始嗎？')) return;
+  stars={};
+  try{localStorage.removeItem('cq_stars');}catch(e){}
+  runToken++;
+  running=false;
+  $('runbtn').disabled=false;
+  $('cat').classList.remove('shake');
+  loadLevel(0);
+  msg('進度清掉了，從第一關開始。','');
+}
+
+function showStars(n){
+  $('stars').textContent='⭐'.repeat(n)+'☆'.repeat(3-n);
+}
+
+function renderLvBar(){
+  const b=$('lvbar'); b.innerHTML='';
+  LEVELS.forEach((L,i)=>{
+    const btn=document.createElement('button');
+    btn.className='lvbtn'+(i===lv&&!free?' cur':'')+((stars[i]?' done':''));
+    btn.textContent=(i+1);
+    btn.onclick=()=>loadLevel(i);
+    b.appendChild(btn);
+  });
+  const f=document.createElement('button');
+  f.className='lvbtn'+(free?' cur':'');
+  f.textContent='自';
+  f.onclick=freeMode;
+  b.appendChild(f);
+}
+
+$('runbtn').onclick=run;
+$('resetbtn').onclick=resetLevel;
+$('wipebtn').onclick=wipeAll;
+$('clearbtn').onclick=()=>{if(running)return;program=[];target=null;renderProgram();msg('指令清掉了，重新排一次。','');};
+$('hintbtn').onclick=()=>{msg(free?'自由模式沒有提示，你自己就是出題的人。':LEVELS[lv].hint,'');};
+$('nextbtn').onclick=()=>{ if(lv<LEVELS.length-1) loadLevel(lv+1); else msg('全部過關了！去自由模式自己設計一個關卡吧。','good'); };
+$('mutebtn').onclick=()=>{muted=!muted; $('mutebtn').textContent=muted?'🔇 靜音':'🔊 音效';};
+
+loadLevel(0);
+</script>
+</body>
+</html>
