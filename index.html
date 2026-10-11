@@ -118,6 +118,13 @@ button:active{transform:translateY(1px);}
 .editbox{display:none; margin-top:10px; font-size:14px; color:var(--ink2);}
 .editbox.on{display:block;}
 .cell.editable{cursor:pointer;}
+
+ruby{ruby-align:center;}
+rt{font-size:.52em; color:#90A4AE; font-weight:400; letter-spacing:0;}
+#msg.task{background:#E3F2FD; color:#0D47A1; font-size:17px; line-height:2;}
+#msg.task b{color:#0D47A1;}
+.zybtn.on{background:#C8E6C9; color:#2E7D32;}
+.ctrls button{font-size:15px;}
 </style>
 </head>
 <body>
@@ -128,7 +135,8 @@ button:active{transform:translateY(1px);}
   <div class="bar">
     <div class="lvname" id="lvname">第一關</div>
     <div class="stars" id="stars"></div>
-    <button class="mute btn-gray" id="mutebtn">🔊 音效</button>
+    <button class="btn-gray" id="zybtn" style="margin-left:auto">ㄅㄆㄇ</button>
+    <button class="btn-gray" id="mutebtn">🔊 音效</button>
   </div>
 
   <div class="lvrow">
@@ -151,6 +159,8 @@ button:active{transform:translateY(1px);}
 
       <div class="ctrls">
         <button class="btn-main" id="runbtn">▶ 執行</button>
+        <button class="btn-gray" id="taskbtn" style="background:#BBDEFB;color:#0D47A1;font-weight:500">❓ 這關要做什麼</button>
+        <button class="btn-gray" id="speakbtn">🔊 唸一次</button>
         <button class="btn-gray" id="resetbtn">↺ 重新開始</button>
         <button class="btn-gray" id="clearbtn">清除指令</button>
         <button class="btn-gray" id="hintbtn">💡 提示</button>
@@ -163,6 +173,8 @@ button:active{transform:translateY(1px);}
 </div>
 
 <script>
+const ZDICT={"程":"ㄔㄥˊ","式":"ㄕˋ","探":"ㄊㄢˋ","險":"ㄒㄧㄢˇ","隊":"ㄉㄨㄟˋ","執":"ㄓˊ","行":"ㄒㄧㄥˊ","新":"ㄒㄧㄣ","開":"ㄎㄞ","始":"ㄕˇ","清":"ㄑㄧㄥ","除":"ㄔㄨˊ","指":"ㄓˇ","令":"ㄌㄧㄥˋ","提":"ㄊㄧˊ","示":"ㄕˋ","這":"ㄓㄜˋ","關":"ㄍㄨㄢ","要":"ㄧㄠˋ","做":"ㄗㄨㄛˋ","什":"ㄕㄣˊ","麼":"ㄇㄜ˙","唸":"ㄋㄧㄢˋ","次":"ㄘˋ","下":"ㄒㄧㄚˋ","音":"ㄧㄣ","效":"ㄒㄧㄠˋ","靜":"ㄐㄧㄥˋ","全":"ㄑㄩㄢˊ","部":"ㄅㄨˋ","進":"ㄐㄧㄣˋ","度":"ㄉㄨˋ","自":"ㄗˋ","由":"ㄧㄡˊ","模":"ㄇㄛˊ","己":"ㄐㄧˇ","出":"ㄔㄨ","題":"ㄊㄧˊ","注":"ㄓㄨˋ","前":"ㄑㄧㄢˊ","右":"ㄧㄡˋ","轉":"ㄓㄨㄢˇ","左":"ㄗㄨㄛˇ","收":"ㄕㄡ","集":"ㄐㄧˊ","複":"ㄈㄨˋ","空":"ㄎㄨㄥ","的":"ㄉㄜ˙","結":"ㄐㄧㄝˊ","束":"ㄕㄨˋ","是":"ㄕˋ","點":"ㄉㄧㄢˇ","上":"ㄕㄤˋ","面":"ㄇㄧㄢˋ","積":"ㄐㄧ","木":"ㄇㄨˋ","加":"ㄐㄧㄚ","來":"ㄌㄞˊ","現":"ㄒㄧㄢˋ","在":"ㄗㄞˋ","會":"ㄏㄨㄟˋ","放":"ㄈㄤˋ","裡":"ㄌㄧˇ","走":"ㄗㄡˇ","三":"ㄙㄢ","步":"ㄅㄨˋ","個":"ㄍㄜ˙","彎":"ㄨㄢ","繞":"ㄖㄠˋ","過":"ㄍㄨㄛˋ","石":"ㄕˊ","頭":"ㄊㄡ˙","偷":"ㄊㄡ","懶":"ㄌㄢˇ","方":"ㄈㄤ","法":"ㄈㄚˇ","兩":"ㄌㄧㄤˇ","撿":"ㄐㄧㄢˇ","寶":"ㄅㄠˇ","長":"ㄔㄤˊ","征":"ㄓㄥ","挑":"ㄊㄧㄠ","戰":"ㄓㄢˋ","小":"ㄒㄧㄠˇ","貓":"ㄇㄠ","到":"ㄉㄠˋ","星":"ㄒㄧㄥ","那":"ㄋㄚˋ","不":"ㄅㄨˋ","了":"ㄌㄜ˙","路":"ㄌㄨˋ","口":"ㄎㄡˇ","擋":"ㄉㄤˇ","住":"ㄓㄨˋ","去":"ㄑㄩˋ","六":"ㄌㄧㄡˋ","試":"ㄕˋ","看":"ㄎㄢˋ","可":"ㄎㄜˇ","以":"ㄧˇ","少":"ㄕㄠˇ","按":"ㄢˋ","幾":"ㄐㄧˇ","用":"ㄩㄥˋ","把":"ㄅㄚˇ","記":"ㄐㄧˋ","得":"ㄉㄜˊ","完":"ㄨㄢˊ","再":"ㄗㄞˋ","很":"ㄏㄣˇ","想":"ㄒㄧㄤˇ","哪":"ㄋㄚˇ","段":"ㄉㄨㄢˋ","最":"ㄗㄨㄟˋ","後":"ㄏㄡˋ","先":"ㄒㄧㄢ","好":"ㄏㄠˇ","就":"ㄐㄧㄡˋ","正":"ㄓㄥˋ","角":"ㄐㄧㄠˇ","往":"ㄨㄤˇ","格":"ㄍㄜˊ","回":"ㄏㄨㄟˊ","耶":"ㄧㄝˊ","累":"ㄌㄟˋ","搞":"ㄍㄠˇ","定":"ㄉㄧㄥˋ","然":"ㄖㄢˊ","算":"ㄙㄨㄢˋ","數":"ㄕㄨˋ","喔":"ㄛ","些":"ㄒㄧㄝ","地":"ㄉㄧˋ","代":"ㄉㄞˋ","替":"ㄊㄧˋ","直":"ㄓˊ","整":"ㄓㄥˇ","條":"ㄊㄧㄠˊ","決":"ㄐㄩㄝˊ","你":"ㄋㄧˇ","省":"ㄕㄥˇ","目":"ㄇㄨˋ","標":"ㄅㄧㄠ","內":"ㄋㄟˋ","還":"ㄏㄞˊ","撞":"ㄓㄨㄤˋ","別":"ㄅㄧㄝˊ","向":"ㄒㄧㄤˋ","水":"ㄕㄨㄟˇ","樹":"ㄕㄨˋ","跑":"ㄆㄠˇ","沒":"ㄇㄟˊ","但":"ㄉㄢˋ","有":"ㄧㄡˇ","白":"ㄅㄞˊ","能":"ㄋㄥˊ","排":"ㄆㄞˊ","吧":"ㄅㄚ˙","掉":"ㄉㄧㄠˋ","樣":"ㄧㄤˋ","子":"ㄗ˙","畫":"ㄏㄨㄚˋ","圖":"ㄊㄨˊ","留":"ㄌㄧㄡˊ","著":"ㄓㄜ˙","從":"ㄘㄨㄥˊ","第":"ㄉㄧˋ","設":"ㄕㄜˋ","計":"ㄐㄧˋ","卡":"ㄎㄚˇ","編":"ㄅㄧㄢ","輯":"ㄐㄧˊ","換":"ㄏㄨㄢˋ","成":"ㄔㄥˊ","草":"ㄘㄠˇ","藏":"ㄘㄤˊ","起":"ㄑㄧˇ","固":"ㄍㄨˋ","功":"ㄍㄨㄥ","被":"ㄅㄟˋ","破":"ㄆㄛˋ","解":"ㄐㄧㄝˇ","人":"ㄖㄣˊ","台":"ㄊㄞˊ","中":"ㄓㄨㄥ","文":"ㄨㄣˊ","語":"ㄩˇ","請":"ㄑㄧㄥˇ","安":"ㄢ","裝":"ㄓㄨㄤ","重":"ㄔㄨㄥˊ","一":"ㄧ"};
+
 const LEVELS=[
 {name:'第 1 關：走三步',par:3,blocks:['forward'],
  hint:'按「前進」三次，小貓就會走到星星那裡！',
@@ -204,6 +216,57 @@ const LEVELS=[
  map:['S..G....','........','........','...G..X.','........','........','.T....T.','........'],
  start:{x:0,y:0,dir:1}}
 ];
+
+const TASKS=[
+'小貓要走三步，走到星星那裡。',
+'星星不在前面了。走到路口要右轉。',
+'石頭擋住了，要繞過去。',
+'要走六步。試試看重複，可以少按幾次。',
+'用重複，把走三步加右轉做兩次。',
+'路上的寶石要記得撿。撿完再到星星。',
+'路很長。想想看哪一段可以用重複。',
+'最後一關。先想好路，再用重複。'
+];
+const FREETASK='你自己畫地圖，自己排指令。起點在左上角。';
+const EDITBOX_TEXT='編輯模式：點格子可以換成草地、石頭、寶石、寶藏、水、樹。小貓的起點固定在左上角。';
+
+let zyOn=true;
+try{ if(localStorage.getItem('cq_zy')==='0') zyOn=false; }catch(e){}
+
+function esc(s){return String(s).replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));}
+function zyHTML(s){
+  s=String(s);
+  if(!zyOn) return esc(s);
+  let out='';
+  for(const ch of s){
+    const z=ZDICT[ch];
+    out += z ? ('<ruby>'+esc(ch)+'<rt>'+z+'</rt></ruby>') : esc(ch);
+  }
+  return out;
+}
+function setZY(el,text){ el.innerHTML=zyHTML(text); }
+
+let voicesReady=false;
+function zhVoice(){
+  if(!('speechSynthesis' in window)) return null;
+  const vs=window.speechSynthesis.getVoices()||[];
+  return vs.find(v=>/zh[-_]?TW|zh[-_]?Hant|Chinese/i.test(v.lang+v.name)) || vs.find(v=>/^zh/i.test(v.lang)) || null;
+}
+function speak(text,quiet){
+  if(!text) return;
+  if(!('speechSynthesis' in window)){ if(!quiet) msg('這台機器沒有語音功能。','bad'); return; }
+  const v=zhVoice();
+  if(!v){ if(!quiet) msg('找不到中文語音。請到 iPad 的「設定 → 輔助使用 → 旁白 → 聲音」下載中文語音。','bad'); return; }
+  try{
+    window.speechSynthesis.cancel();
+    const u=new SpeechSynthesisUtterance(text);
+    u.lang='zh-TW'; u.voice=v; u.rate=.85; u.pitch=1.05;
+    window.speechSynthesis.speak(u);
+  }catch(e){ if(!quiet) msg('語音播放失敗。','bad'); }
+}
+if('speechSynthesis' in window){
+  try{ window.speechSynthesis.onvoiceschanged=()=>{voicesReady=true;}; }catch(e){}
+}
 
 const DIRS=[[0,-1],[1,0],[0,1],[-1,0]];
 const DIRNAME=['上','右','下','左'];
@@ -247,7 +310,7 @@ function loadLevel(i){
   for(let y=0;y<8;y++) for(let x=0;x<8;x++) if(mapData[y][x]==='G') gems.push(x+','+y);
   $('editbox').classList.remove('on');
   drawMap(); drawCat(); renderBlocks(); renderProgram(); renderLvBar();
-  $('lvname').textContent=L.name;
+  setZY($('lvname'),L.name);
   showStars(stars[i]||0);
   $('nextbtn').style.display='none';
   msg('按上面的積木，把指令排進來吧。','');
@@ -323,7 +386,7 @@ function renderBlocks(){
   $('blkrow').innerHTML='';
   defs.forEach(([k,label])=>{
     const b=document.createElement('button');
-    b.className='blk '+k; b.textContent=label;
+    b.className='blk '+k; b.innerHTML=zyHTML(label);
     b.disabled=!allow.includes(k);
     b.onclick=()=>addBlock(k);
     $('blkrow').appendChild(b);
@@ -341,20 +404,22 @@ function addBlock(k){
     list.push({type:k});
   }
   renderProgram(); beep(700,.05);
+  const nm={forward:'前進',right:'右轉',left:'左轉',collect:'收集',repeat:'重複'}[k];
+  if(nm&&!muted) speak(nm,true);
 }
 
 function renderProgram(){
   const p=$('program'); p.innerHTML='';
   if(program.length===0){
     const e=document.createElement('div'); e.className='empty';
-    e.textContent='程式是空的。點上面的積木加進來。';
+    e.innerHTML=zyHTML('程式是空的。點上面的積木加進來。');
     p.appendChild(e);
   }
   program.forEach(it=>p.appendChild(renderItem(it)));
   const note=$('insertnote');
   if(target!==null){
     note.className='insertnote';
-    note.innerHTML='現在加的積木會放進「重複」裡面 <button id="endrep" style="margin-left:6px;background:#1B5E20;color:#fff;font-size:13px;padding:6px 10px;min-height:36px">結束重複</button>';
+    note.innerHTML=zyHTML('現在加的積木會放進「重複」裡面 ')+'<button id="endrep" style="margin-left:6px;background:#1B5E20;color:#fff;font-size:13px;padding:6px 10px;min-height:36px">結束重複</button>';
     $('endrep').onclick=()=>{target=null; renderProgram();};
   }else{
     note.className=''; note.innerHTML='';
@@ -368,9 +433,9 @@ function renderItem(it){
     const head=document.createElement('div'); head.className='rephead';
     const n=document.createElement('span'); n.className='n'; n.textContent=it.times;
     n.onclick=()=>{it.times=it.times>=5?2:it.times+1; renderProgram(); beep(600,.05);};
-    head.appendChild(document.createTextNode('🔁 重複'));
+    const zh=document.createElement('span'); zh.innerHTML=zyHTML('🔁 重複'); head.appendChild(zh);
     head.appendChild(n);
-    head.appendChild(document.createTextNode('次'));
+    const ci=document.createElement('span'); ci.innerHTML=zyHTML('次'); head.appendChild(ci);
     const x=document.createElement('span'); x.className='x'; x.textContent='✕';
     x.onclick=()=>{
       const i=program.indexOf(it); if(i>=0) program.splice(i,1);
@@ -380,7 +445,7 @@ function renderItem(it){
     head.appendChild(x);
     const body=document.createElement('div'); body.className='repbody';
     if(it.body.length===0){
-      const e=document.createElement('div'); e.className='empty'; e.textContent='空的';
+      const e=document.createElement('div'); e.className='empty'; e.innerHTML=zyHTML('空的');
       body.appendChild(e);
     }
     it.body.forEach(c=>body.appendChild(renderItem(c)));
@@ -390,7 +455,7 @@ function renderItem(it){
   const names={forward:'⬆️ 前進',right:'↪️ 右轉',left:'↩️ 左轉',collect:'💎 收集'};
   const d=document.createElement('div');
   d.className='item '+it.type;
-  d.appendChild(document.createTextNode(names[it.type]));
+  const lab=document.createElement('span'); lab.innerHTML=zyHTML(names[it.type]); d.appendChild(lab);
   const x=document.createElement('span'); x.className='x'; x.textContent='✕';
     x.onclick=ev=>{
       ev.stopPropagation();
@@ -426,7 +491,21 @@ function blockCount(list){
   return n;
 }
 
-function msg(t,cls){const m=$('msg'); m.textContent=t; m.className=cls||'';}
+let lastMsgT='', lastMsgC='';
+function msg(t,cls){
+  lastMsgT=t; lastMsgC=cls||'';
+  const m=$('msg'); m.className=lastMsgC; m.innerHTML=zyHTML(t);
+}
+function refreshZY(){
+  setZY($('editbox'),EDITBOX_TEXT);
+  setZY($('lvname'), free?'自由模式：自己出題':LEVELS[lv].name);
+  renderBlocks(); renderProgram(); msg(lastMsgT,lastMsgC);
+}
+function showTask(){
+  const t = free? FREETASK : TASKS[lv];
+  msg(t,'task');
+  speak(t,true);
+}
 
 function walkable(x,y){
   if(x<0||y<0||x>7||y>7) return false;
@@ -527,7 +606,7 @@ function resetLevel(){
   if(free){
     cat={x:0,y:0,dir:1}; collected=[];
     drawMap(); drawCat(); renderBlocks(); renderProgram();
-    $('lvname').textContent='自由模式：自己出題';
+    setZY($('lvname'),'自由模式：自己出題');
     $('editbox').classList.add('on');
     showStars(0);
     msg('重新開始了。你自己畫的地圖留著，指令清掉了。','');
@@ -546,7 +625,9 @@ function wipeAll(){
   running=false;
   $('runbtn').disabled=false;
   $('cat').classList.remove('shake');
-  loadLevel(0);
+  $('zybtn').className=zyOn?'btn-gray zybtn on':'btn-gray zybtn';
+setZY($('editbox'),EDITBOX_TEXT);
+loadLevel(0);
   msg('進度清掉了，從第一關開始。','');
 }
 
@@ -571,6 +652,14 @@ function renderLvBar(){
 }
 
 $('runbtn').onclick=run;
+$('taskbtn').onclick=showTask;
+$('speakbtn').onclick=()=>{const t=free?FREETASK:TASKS[lv]; msg(t,'task'); speak(t);};
+$('zybtn').onclick=()=>{
+  zyOn=!zyOn;
+  try{localStorage.setItem('cq_zy',zyOn?'1':'0');}catch(e){}
+  $('zybtn').className=zyOn?'btn-gray zybtn on':'btn-gray zybtn';
+  refreshZY();
+};
 $('resetbtn').onclick=resetLevel;
 $('wipebtn').onclick=wipeAll;
 $('clearbtn').onclick=()=>{if(running)return;program=[];target=null;renderProgram();msg('指令清掉了，重新排一次。','');};
